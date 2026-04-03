@@ -1,15 +1,13 @@
-# AI Claude Code Build Guide
+﻿# AI Claude Code Build Guide
 
-> This document records the complete process of supplementing missing configuration files for the Claude Code source snapshot and successfully compiling and running it.
+> This project is a reverse-engineered implementation of Anthropic Claude Code CLI, pre-configured to use the AceData cloud API proxy. It supports interactive AI coding in the terminal with chat UI and API key management.
 
 ---
 
-[中文 README.md](README_zh.md) | [English README.md](README.md)
+[中文 README](README_zh.md) | [English README](README.md)
 
-## 📚 Documentation Navigation
+## 📖 Documentation Navigation
 
-- **[README.md](README.md)** - Chinese version (Quick Start & Build Guide)
-- **[README_EN.md](README_EN.md)** - This document (English version)
 - **[Learn_Claude_Code.md](docs/Learn_Claude_Code.md)** - Deep dive into Claude Code architecture and Agent principles
 - **[Claude_Research.md](docs/Claude_Research.md)** - Source snapshot research background and security analysis
 - **[AI_Reimplementation.md](docs/AI_Reimplementation.md)** - Legal and ethical discussion on AI reimplementation
@@ -29,8 +27,8 @@
 
 ```bash
 # Clone the repository
-git clone https://gitee.com/Larack/ai-cc.git
-cd ai-cc
+git clone https://github.com/larack8/claw-code-cli
+cd claw-code-cli
 
 # Install dependencies
 bun install
@@ -45,9 +43,108 @@ bun run dev
 ./dist/cli.js
 ```
 
+![run.png](images/run.png)
+
 ---
 
-## 📖 Project Overview
+## 🔑 API Key Configuration
+
+This project is pre-configured to use the **AceData Cloud** API proxy for Anthropic Claude.
+
+### Method 1: Configure via settings.json (Recommended)
+
+Edit `~/.claude/settings.json` (create if it doesn't exist):
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "your-api-token-here",
+    "ANTHROPIC_BASE_URL": "https://api.acedata.cloud"
+  }
+}
+```
+
+### Method 2: Environment Variables
+
+Set environment variables before running:
+
+```bash
+# Linux / macOS
+export ANTHROPIC_AUTH_TOKEN="your-api-token-here"
+export ANTHROPIC_BASE_URL="https://api.acedata.cloud"
+./dist/cli.js
+
+# Windows PowerShell
+$env:ANTHROPIC_AUTH_TOKEN="your-api-token-here"
+$env:ANTHROPIC_BASE_URL="https://api.acedata.cloud"
+.\dist\cli.js
+```
+
+### Method 3: In-App Setup Command
+
+After starting the CLI, type `/api-setup` to open the API configuration guide.
+
+### How to Get Your API Token
+
+1. Visit [AceData Cloud](https://acedata.cloud)
+2. Register/login to your account
+3. Navigate to API Keys section
+4. Create a new API key
+5. Copy the token and configure as shown above
+
+---
+
+## 📦 Building Binary Executables
+
+Build standalone binary executables that don't require Bun to be installed.
+
+### Quick Build (Current Platform)
+
+```bash
+bun run build:binary
+```
+
+### Platform-Specific Builds
+
+```bash
+# Windows (.exe)
+bun run build:win
+
+# macOS
+bun run build:macos
+
+# Linux
+bun run build:linux
+```
+
+The compiled binaries will be placed in the `build/` directory:
+- Windows: `build/claude-js.exe`
+- macOS: `build/claude-js-macos`
+- Linux: `build/claude-js-linux`
+
+### Cross-Platform Compilation Notes
+
+> **Important**: Bun's `--compile` flag creates self-contained executables but **cross-compilation is limited**. For best results, compile on the target platform:
+> - Build Windows `.exe` on a Windows machine
+> - Build macOS binary on a macOS machine
+> - Build Linux binary on a Linux machine or in WSL2
+
+### Running the Binary
+
+```bash
+# After building, run directly (no Bun required):
+
+# Windows
+.\build\claude-js.exe
+
+# macOS / Linux (chmod first)
+chmod +x build/claude-js-macos
+./build/claude-js-macos
+```
+
+---
+
+## 📋 Project Overview
 
 ### Project Information
 
@@ -59,22 +156,27 @@ bun run dev
 | **Module Type** | ESModule (`"type": "module"`) |
 | **Runtime Engine** | Bun >= 1.2.0 |
 | **Entry Command** | `claude-js` → `dist/cli.js` |
-| **Workspaces** | `packages/*` and `packages/@ant/*` |
+| **API Provider** | AceData Cloud (`https://api.acedata.cloud`) |
 
 ### Background
 
-The Claude Code source snapshot only contains the `src/` directory and `README.md`, missing all build configuration files. This project successfully restores the complete build environment by supplementing necessary configuration files.
+The Claude Code source snapshot only contains the `src/` directory and `README.md`, missing all build configuration files. This project successfully restores the complete build environment by supplementing necessary configuration files, and adds API key configuration support for the AceData Cloud proxy.
 
 ---
 
-## 📦 Project Structure
+## 📁 Project Structure
+
+![cc.png](images/cc.png)
 
 ```
-ai-claw-code/
+claw-code-cli/
 ├── src/                    # Source code directory
-│   └── entrypoints/
-│       └── cli.tsx        # CLI entry file
-├── packages/              # Workspace packages
+│   ├── entrypoints/
+│   │   └── cli.tsx         # CLI entry file
+│   └── commands/
+│       └── api-setup/      # API configuration UI command
+│           └── api-setup.tsx
+├── packages/               # Workspace packages
 │   ├── audio-capture-napi/
 │   ├── color-diff-napi/
 │   ├── image-processor-napi/
@@ -85,14 +187,16 @@ ai-claw-code/
 │   ├── Claude_Research.md
 │   ├── AI_Reimplementation.md
 │   ├── testing-spec.md
-│   └── test-plans/        # Test plans
-├── dist/                  # Build output directory
-├── build.ts               # Build script
-├── package.json           # Project configuration
-├── tsconfig.json          # TypeScript configuration
-├── biome.json             # Biome code formatting configuration
-├── knip.json              # Unused code detection configuration
-└── mint.json              # Mintlify documentation configuration
+│   └── ... more docs
+├── build/                  # Binary output directory (after build:binary)
+├── dist/                   # JS bundle output directory
+├── docs/                   # Documentation directory
+├── build.ts                # Build script
+├── package.json            # Project configuration
+├── tsconfig.json           # TypeScript configuration
+├── biome.json              # Biome code formatting configuration
+├── knip.json               # Unused code detection configuration
+└── mint.json               # Mintlify documentation configuration
 ```
 
 ---
@@ -101,7 +205,11 @@ ai-claw-code/
 
 | Command | Description |
 |---------|-------------|
-| `bun run build` | Build the project (executes `build.ts`) |
+| `bun run build` | Build the project JS bundle (executes `build.ts`) |
+| `bun run build:binary` | Build standalone executable for current platform |
+| `bun run build:win` | Build Windows `.exe` binary |
+| `bun run build:macos` | Build macOS binary |
+| `bun run build:linux` | Build Linux binary |
 | `bun run dev` | Development mode (executes `scripts/dev.ts`) |
 | `bun test` | Run tests |
 | `bun run lint` | Code linting |
@@ -123,6 +231,7 @@ The core configuration file that defines:
 - **Version**: `1.0.3`
 - **Entry point**: `src/entrypoints/cli.tsx`
 - **Build output**: `dist/cli.js`
+- **Binary output**: `build/claude-js[.exe]`
 - **Workspaces**: Supports monorepo structure
 
 ### 2. tsconfig.json
@@ -153,13 +262,27 @@ Custom build script using Bun's native bundling capabilities:
 - Support code splitting
 - Post-processing: Replace `import.meta.require` for Node.js compatibility
 
+### 4. ~/.claude/settings.json
+
+User settings file for API configuration:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "your-token",
+    "ANTHROPIC_BASE_URL": "https://api.acedata.cloud"
+  }
+}
+```
+
 ---
 
-## 📚 Core Technology Stack
+## 📎 Core Technology Stack
 
 ### AI Service Integration
 
 - **Anthropic SDK**: Official SDK, Bedrock SDK, Vertex SDK, Agent SDK
+- **API Proxy**: AceData Cloud (`https://api.acedata.cloud`)
 - **Cloud Service SDKs**: AWS SDK (Bedrock), Azure Identity, Google Auth Library
 - **MCP Protocol**: `@modelcontextprotocol/sdk` - Model Context Protocol
 
@@ -188,35 +311,31 @@ Custom build script using Bun's native bundling capabilities:
 - **diff**: Text diff comparison
 - **fuse.js**: Fuzzy search
 
-### Native Modules (Workspace)
-
-- `audio-capture-napi`: Audio capture
-- `color-diff-napi`: Color difference calculation
-- `image-processor-napi`: Image processing
-- `modifiers-napi`: Modifier key handling
-- `url-handler-napi`: URL handling
-
 ---
 
 ## 🎯 Project Features
 
 1. **Bun Runtime Based**: Leverages Bun's high performance and native TypeScript support
 2. **React Terminal Rendering**: Build terminal UI using React for declarative interactive experience
-3. **Multi-Cloud Support**: Supports Anthropic direct connection, AWS Bedrock, Google Vertex, Azure
-4. **MCP Protocol Integration**: Supports Model Context Protocol
-5. **Complete Observability**: Integrated OpenTelemetry for distributed tracing and monitoring
-6. **Monorepo Architecture**: Manages multiple packages using workspaces
-7. **Modern Toolchain**: Biome (formatting/linting), Knip (dead code detection)
+3. **AceData Cloud Integration**: Pre-configured to use AceData Cloud API proxy for Claude access
+4. **API Key UI Management**: Built-in `/api-setup` command for configuring API credentials
+5. **Multi-Cloud Support**: Supports Anthropic direct connection, AWS Bedrock, Google Vertex, Azure
+6. **Standalone Binary**: Compile to single executable for Windows, macOS, and Linux
+7. **MCP Protocol Integration**: Supports Model Context Protocol
+8. **Complete Observability**: Integrated OpenTelemetry for distributed tracing and monitoring
+9. **Monorepo Architecture**: Manages multiple packages using workspaces
+10. **Modern Toolchain**: Biome (formatting/linting), Knip (dead code detection)
 
 ---
 
-## 📝 Development Guide
+## 📑 Development Guide
 
 ### Build Process
 
 1. **Clean**: Remove old `dist/` directory
 2. **Bundle**: Bundle TypeScript/TSX using `Bun.build()`
 3. **Post-process**: Replace Bun-specific APIs for Node.js compatibility
+4. **Binary** (optional): Use `bun build --compile` for standalone executable
 
 ### Code Quality
 
@@ -224,28 +343,12 @@ Custom build script using Bun's native bundling capabilities:
 - Use **Knip** to detect unused code
 - Use **TypeScript 6.0.2** for type checking
 
-### Testing
-
-The project includes comprehensive test plans, see `docs/test-plans/` directory:
-
-- Tool system tests
-- Pure function tests
-- Context building tests
-- Permission system tests
-- Model routing tests
-- Message handling tests
-- Git utility tests
-- Configuration settings tests
-- CJK truncation tests
-- Mock reliability tests
-- Integration tests
-- CLI coverage baseline
-
 ---
 
 ## 🔗 Related Resources
 
 - [Anthropic Claude](https://www.anthropic.com/claude)
+- [AceData Cloud](https://acedata.cloud)
 - [Bun Official Documentation](https://bun.sh/docs)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [OpenTelemetry](https://opentelemetry.io/)

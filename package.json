@@ -36,9 +36,15 @@
     "test": "bun test",
     "check:unused": "knip-bun",
     "health": "bun run scripts/health-check.ts",
-    "docs:dev": "npx mintlify dev"
+    "docs:dev": "npx mintlify dev",
+    "build:binary": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js",
+    "build:win": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js.exe --windows-hide-console --windows-title=Claude-JS --windows-version=1.0.3",
+    "build:macos": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js-macos --target=bun",
+    "build:linux": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js-linux --target=bun",
+    "build:all": "echo 'Note: Cross-compilation requires building on each platform' && bun run build:binary"
   },
-  "dependencies": {},
+  "dependencies": {
+  },
   "devDependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
     "@ant/claude-for-chrome-mcp": "workspace:*",

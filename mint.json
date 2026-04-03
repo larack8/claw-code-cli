@@ -22,7 +22,7 @@
   },
   "topbarCtaButton": {
     "type": "github",
-    "url": "https://github.com/larack8/ai-claw-code"
+    "url": "https://github.com/larack8/claw-code-cli"
   },
   "search": {
     "prompt": "搜索 Claude Code 架构文档..."

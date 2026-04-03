@@ -1,0 +1,46 @@
+{
+  "name": "claude-js",
+  "version": "1.0.3",
+  "description": "Reverse-engineered Anthropic Claude Code CLI — interactive AI coding assistant in the terminal",
+  "type": "module",
+  "keywords": [
+    "claude",
+    "anthropic",
+    "cli",
+    "ai",
+    "coding-assistant",
+    "terminal",
+    "repl"
+  ],
+  "engines": {
+    "bun": ">=1.2.0"
+  },
+  "bin": {
+    "claude-js": "dist/cli.js"
+  },
+  "workspaces": [
+    "packages/*",
+    "packages/@ant/*"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "build:binary": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js",
+    "build:win": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js.exe --windows-hide-console --windows-title=Claude-JS --windows-version=1.0.3",
+    "build:macos": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js-macos --target=bun",
+    "build:linux": "bun run build && bun build src/entrypoints/cli.tsx --compile --outfile=build/claude-js-linux --target=bun",
+    "build:all": "echo 'Note: Cross-compilation is not fully supported. Build on each platform separately.' && bun run build:binary",
+    "dev": "bun run scripts/dev.ts",
+    "prepublishOnly": "bun run build",
+    "lint": "biome lint src/",
+    "lint:fix": "biome lint --fix src/",
+    "format": "biome format --write src/",
+    "prepare": "git config core.hooksPath .githooks",
+    "test": "bun test",
+    "check:unused": "knip-bun",
+    "health": "bun run scripts/health-check.ts",
+    "docs:dev": "npx mintlify dev"
+  }
+}

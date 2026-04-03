@@ -9,8 +9,8 @@ research, and software supply-chain analysis**.
 ## Quick Start
 
 ```
-git clone https://gitee.com/Larack/ai-cc.git
-cd ai-cc
+git clone https://github.com/larack8/claw-code-cli
+cd claw-code-cli
 bun install
 bun run build
 bun run dev
@@ -245,8 +245,8 @@ import {feature} from 'bun:bundle'
 
 // Inactive code is completely stripped at build time
 const voiceCommand = feature('VOICE_MODE')
-    ? require('./commands/voice/index.js').default
-    : null
+	? require('./commands/voice/index.js').default
+	: null
 ```
 
 Notable flags: `PROACTIVE`, `KAIROS`, `BRIDGE_MODE`, `DAEMON`, `VOICE_MODE`, `AGENT_TRIGGERS`, `MONITOR_TOOL`
