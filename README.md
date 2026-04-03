@@ -1,179 +1,263 @@
-# AI Claude Code 源码编译指南
+# AI Claude Code Build Guide
 
-> 本文档记录了为 Claude Code 源码快照补充缺失配置文件并成功编译运行的完整过程。
-
-[README.md](README.md) | [Learn_Claude_Code.md](docs/Learn_Claude_Code.md) | [Claude_Research.md](docs/Claude_Research.md) | [AI_Reimplementation.md](docs/AI_Reimplementation.md)
-
-快速下载代码并编译
-
-```
-git clone https://gitee.com/Larack/ai-cc.git
-cd ai-cc
-bun install
-bun run build
-bun run dev
-```
-
-## 概述
-
-Claude Code 的源码快照仅包含 `src/` 目录和 `README.md`，缺少所有构建配置文件。本指南涵盖了从零开始恢复构建环境的全部步骤。
+> This document records the complete process of supplementing missing configuration files for the Claude Code source snapshot and successfully compiling and running it.
 
 ---
 
-## 补充的配置文件
+[中文 README.md](README_zh.md) | [English README.md](README.md)
 
-### 1. `package.json`
+## 📚 Documentation Navigation
 
-项目的核心配置文件，定义了：
+- **[README.md](README.md)** - Chinese version (Quick Start & Build Guide)
+- **[README_EN.md](README_EN.md)** - This document (English version)
+- **[Learn_Claude_Code.md](docs/Learn_Claude_Code.md)** - Deep dive into Claude Code architecture and Agent principles
+- **[Claude_Research.md](docs/Claude_Research.md)** - Source snapshot research background and security analysis
+- **[AI_Reimplementation.md](docs/AI_Reimplementation.md)** - Legal and ethical discussion on AI reimplementation
+- **[testing-spec.md](docs/testing-spec.md)** - Testing specification documentation
+- **[REVISION-PLAN.md](docs/REVISION-PLAN.md)** - Project revision plan
 
-- **包名**: `@anthropic-ai/claude-code`
-- **入口点**: `src/entrypoints/cli.tsx`
-- **构建产物**: `dist/cli.js`
-- **脚本命令**:
-	- `bun install` — 执行安装依赖脚本
-	- `bun run build` — 执行构建脚本
-	- `bun run dev` — 直接运行源码（开发模式）
-	- `bun run typecheck` — TypeScript 类型检查
+---
 
-**依赖项分为三类：**
+## 🚀 Quick Start
 
-| 分类                    | 数量    | 示例                                           |
-|-----------------------|-------|----------------------------------------------|
-| 公开 npm 包              | ~75 个 | `react`, `chalk`, `zod`, `@anthropic-ai/sdk` |
-| Anthropic 内部包（需 stub） | ~10 个 | `@ant/*`, `@anthropic-ai/sandbox-runtime`    |
-| 开发依赖                  | ~13 个 | `typescript`, `@types/react`, `@types/bun`   |
+### Prerequisites
 
-**详细命令：**
+- **Bun** >= 1.2.0 (required)
+- Git
+
+### Installation & Running
 
 ```bash
+# Clone the repository
+git clone https://gitee.com/Larack/ai-cc.git
+cd ai-cc
+
 # Install dependencies
 bun install
 
-# Dev mode (runs cli.tsx with MACRO defines injected via -d flags)
+# Build the project
+bun run build
+
+# Run in development mode
 bun run dev
 
-# Pipe mode
-echo "say hello" | bun run src/entrypoints/cli.tsx -p
-
-# Build (code splitting, outputs dist/cli.js + ~450 chunk files)
-bun run build
-
-# Test
-bun test                  # run all tests
-bun test src/utils/__tests__/hash.test.ts   # run single file
-bun test --coverage       # with coverage report
-
-# Lint & Format (Biome)
-bun run lint              # check only
-bun run lint:fix          # auto-fix
-bun run format            # format all src/
-```
-
-### 2. `tsconfig.json`
-
-TypeScript 编译配置，关键设置：
-
-- **模块系统**: ESNext + bundler resolution
-- **JSX**: `react-jsx`（React 19 的新 JSX 转换）
-- **路径别名**: `src/*` → `./src/*`（项目中大量使用 `import from 'src/...'` 格式的导入）
-- **目标**: ESNext（Bun 原生支持）
-- **类型**: 同时包含 `bun-types` 和 `node` 类型定义
-
-
-
-### 步骤 2：执行构建
-
-```bash
-bun run build
-```
-
-构建脚本将：
-
-1. 初始化 `bun:bundle` feature flag polyfill
-2. 注入 `MACRO.*` 构建时常量
-3. 为内部 Anthropic 包生成内联 stub
-4. 自动检测并 stub 源码快照中缺失的源文件
-5. 打包 `src/entrypoints/cli.tsx` 入口点
-6. 输出到 `dist/cli.js`（约 11.7 MB）和 `dist/cli.js.map`
-
-### 步骤 3：验证运行
-
-```bash
-# 检查版本
-bun dist/cli.js --version
-# 输出: 1.0.0-research (Claude Code)
-
-# 查看帮助
-bun dist/cli.js --help
-
-# 启动交互式界面（需要 API Key）
-bun dist/cli.js
-```
-
-### 自定义版本号
-
-```bash
-CLAUDE_CODE_VERSION=2.0.0 bun run build
+# Or run CLI directly
+./dist/cli.js
 ```
 
 ---
 
-## 构建产物
+## 📖 Project Overview
 
-| 文件                | 大小       | 说明           |
-|-------------------|----------|--------------|
-| `dist/cli.js`     | ~11.7 MB | 主程序包（ESM 格式） |
-| `dist/cli.js.map` | ~38.6 MB | Source Map   |
+### Project Information
+
+| Item | Description |
+|------|-------------|
+| **Name** | `claude-js` |
+| **Version** | `1.0.3` |
+| **Description** | Reverse-engineered Anthropic Claude Code CLI — interactive AI coding assistant in the terminal |
+| **Module Type** | ESModule (`"type": "module"`) |
+| **Runtime Engine** | Bun >= 1.2.0 |
+| **Entry Command** | `claude-js` → `dist/cli.js` |
+| **Workspaces** | `packages/*` and `packages/@ant/*` |
+
+### Background
+
+The Claude Code source snapshot only contains the `src/` directory and `README.md`, missing all build configuration files. This project successfully restores the complete build environment by supplementing necessary configuration files.
 
 ---
 
-## 技术要点
-
-### 架构概览
+## 📦 Project Structure
 
 ```
-入口点: src/entrypoints/cli.tsx
-    ↓ (动态导入)
-主程序: src/main.tsx (Commander.js CLI)
-    ↓
-终端 UI: src/ink/ (自定义 Ink 实现 + React 19)
-    ↓
-核心系统:
-├── src/tools/      (~40 个工具实现)
-├── src/commands/   (~50 个斜杠命令)
-├── src/services/   (API、MCP、OAuth、分析)
-├── src/hooks/      (权限系统)
-└── src/coordinator/ (多智能体协调)
+ai-claw-code/
+├── src/                    # Source code directory
+│   └── entrypoints/
+│       └── cli.tsx        # CLI entry file
+├── packages/              # Workspace packages
+│   ├── audio-capture-napi/
+│   ├── color-diff-napi/
+│   ├── image-processor-napi/
+│   ├── modifiers-napi/
+│   └── url-handler-napi/
+├── docs/                  # Documentation directory
+│   ├── Learn_Claude_Code.md
+│   ├── Claude_Research.md
+│   ├── AI_Reimplementation.md
+│   ├── testing-spec.md
+│   └── test-plans/        # Test plans
+├── dist/                  # Build output directory
+├── build.ts               # Build script
+├── package.json           # Project configuration
+├── tsconfig.json          # TypeScript configuration
+├── biome.json             # Biome code formatting configuration
+├── knip.json              # Unused code detection configuration
+└── mint.json              # Mintlify documentation configuration
 ```
 
-### 关键技术栈
+---
 
-| 组件        | 技术                          |
-|-----------|-----------------------------|
-| 运行时       | Bun                         |
-| 语言        | TypeScript (strict)         |
-| 终端 UI     | React 19 + 自定义 Ink fork     |
-| CLI 框架    | Commander.js 13             |
-| Schema 验证 | Zod v3                      |
-| 协议        | MCP SDK, LSP                |
-| API       | Anthropic SDK               |
-| 遥测        | OpenTelemetry 2.x           |
-| 布局引擎      | 纯 TypeScript yoga-layout 实现 |
+## 🛠️ Available Scripts
 
-### 注意事项
+| Command | Description |
+|---------|-------------|
+| `bun run build` | Build the project (executes `build.ts`) |
+| `bun run dev` | Development mode (executes `scripts/dev.ts`) |
+| `bun test` | Run tests |
+| `bun run lint` | Code linting |
+| `bun run lint:fix` | Auto-fix code issues |
+| `bun run format` | Format code |
+| `bun run check:unused` | Check for unused code |
+| `bun run health` | Health check |
+| `bun run docs:dev` | Start documentation development server |
 
-1. **内部包不可用**：`@ant/*` 系列包和部分 `@anthropic-ai/*` 包不在公共 npm 上发布，相关功能（Chrome
-   集成、计算机使用、沙箱运行时等）在此构建中不可用。
+---
 
-2. **Feature Flags 全部禁用**：所有 `bun:bundle` 特性标志默认返回 `false`，这意味着实验性功能（语音、守护进程、协调器模式等）的代码路径已被消除。
+## 🔧 Core Configuration Files
 
-3. **需要 API Key 才能实际使用**：虽然 CLI 可以编译和启动（完整的终端 UI、主题选择等均正常），但实际使用需要 Anthropic API
-   Key 或 OAuth 登录。
+### 1. package.json
 
-4. **React Reconciler 版本**：项目使用了 `useEffectEvent` Hook，需要 `react-reconciler@0.33.0`（而非 0.31.0），该版本才实现了
-   `useEffectEvent` 调度器。
+The core configuration file that defines:
 
-5. **内部包 Stub 需完整方法签名**：某些内部包（如 `@anthropic-ai/sandbox-runtime` 的 `SandboxManager`）的 stub
-   需要包含完整的静态方法（如 `isSupportedPlatform`、`checkDependencies`、`wrapWithSandbox`
-   等），否则运行时在访问未定义属性时会报错。构建脚本已为所有已知的内部类提供了完整方法签名。
+- **Package name**: `claude-js`
+- **Version**: `1.0.3`
+- **Entry point**: `src/entrypoints/cli.tsx`
+- **Build output**: `dist/cli.js`
+- **Workspaces**: Supports monorepo structure
 
+### 2. tsconfig.json
+
+TypeScript compilation configuration:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["bun"]
+  }
+}
+```
+
+### 3. build.ts
+
+Custom build script using Bun's native bundling capabilities:
+
+- Clean output directory
+- Bundle using `Bun.build()`
+- Support code splitting
+- Post-processing: Replace `import.meta.require` for Node.js compatibility
+
+---
+
+## 📚 Core Technology Stack
+
+### AI Service Integration
+
+- **Anthropic SDK**: Official SDK, Bedrock SDK, Vertex SDK, Agent SDK
+- **Cloud Service SDKs**: AWS SDK (Bedrock), Azure Identity, Google Auth Library
+- **MCP Protocol**: `@modelcontextprotocol/sdk` - Model Context Protocol
+
+### Terminal UI
+
+- **React**: Terminal UI rendering using React
+- **react-reconciler**: Custom renderer
+- **chalk**: Terminal colors
+- **cli-highlight**: Code highlighting
+- **figures**: Terminal icons
+- **wrap-ansi**: ANSI text wrapping
+
+### Observability
+
+- **OpenTelemetry**: Complete observability stack
+	- Trace, Metrics, Logs exporters
+	- Support for OTLP (gRPC/HTTP/Proto)
+	- Prometheus exporter
+
+### Utility Libraries
+
+- **lodash-es**: Utility functions
+- **zod**: Runtime type validation
+- **yaml**: YAML parsing
+- **semver**: Semantic versioning
+- **diff**: Text diff comparison
+- **fuse.js**: Fuzzy search
+
+### Native Modules (Workspace)
+
+- `audio-capture-napi`: Audio capture
+- `color-diff-napi`: Color difference calculation
+- `image-processor-napi`: Image processing
+- `modifiers-napi`: Modifier key handling
+- `url-handler-napi`: URL handling
+
+---
+
+## 🎯 Project Features
+
+1. **Bun Runtime Based**: Leverages Bun's high performance and native TypeScript support
+2. **React Terminal Rendering**: Build terminal UI using React for declarative interactive experience
+3. **Multi-Cloud Support**: Supports Anthropic direct connection, AWS Bedrock, Google Vertex, Azure
+4. **MCP Protocol Integration**: Supports Model Context Protocol
+5. **Complete Observability**: Integrated OpenTelemetry for distributed tracing and monitoring
+6. **Monorepo Architecture**: Manages multiple packages using workspaces
+7. **Modern Toolchain**: Biome (formatting/linting), Knip (dead code detection)
+
+---
+
+## 📝 Development Guide
+
+### Build Process
+
+1. **Clean**: Remove old `dist/` directory
+2. **Bundle**: Bundle TypeScript/TSX using `Bun.build()`
+3. **Post-process**: Replace Bun-specific APIs for Node.js compatibility
+
+### Code Quality
+
+- Use **Biome** for code formatting and linting
+- Use **Knip** to detect unused code
+- Use **TypeScript 6.0.2** for type checking
+
+### Testing
+
+The project includes comprehensive test plans, see `docs/test-plans/` directory:
+
+- Tool system tests
+- Pure function tests
+- Context building tests
+- Permission system tests
+- Model routing tests
+- Message handling tests
+- Git utility tests
+- Configuration settings tests
+- CJK truncation tests
+- Mock reliability tests
+- Integration tests
+- CLI coverage baseline
+
+---
+
+## 🔗 Related Resources
+
+- [Anthropic Claude](https://www.anthropic.com/claude)
+- [Bun Official Documentation](https://bun.sh/docs)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [OpenTelemetry](https://opentelemetry.io/)
+
+---
+
+## ⚠️ Disclaimer
+
+This project is a research and analysis of the publicly exposed Claude Code source snapshot, intended solely for educational purposes, security research, and software supply chain analysis. See [Claude_Research.md](docs/Claude_Research.md) for details.
+
+---
+
+## 📄 License
+
+Please refer to the original project's license terms. This documentation and supplementary configuration files follow the corresponding open source licenses.
